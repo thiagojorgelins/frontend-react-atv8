@@ -1,0 +1,20 @@
+.products:hover {
+  background-color: white;
+  padding: 1em;
+  cursor: pointer;
+  transition: all 400ms !important;
+  box-shadow: 0 0.4rem 1rem rgba(24, 187, 78, 0.528),
+    0 0.1em 1.4rem rgba(187, 24, 24, 0.528);
+}
+
+.products .card-image .image {
+  height: 200px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.products .card-image .image img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
