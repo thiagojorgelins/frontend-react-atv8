@@ -10,16 +10,23 @@ function Users() {
   const [totalPages, setTotalPages] = useState(1);
   const [errorMessage, setErrorMessage] = useState("");
   const [isEditModalActive, setIsEditModalActive] = useState(false);
+  const [isCreateModalActive, setIsCreateModalActive] = useState(false);
   const [isDeleteModalActive, setIsDeleteModalActive] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [editFormData, setEditFormData] = useState({
     name: "",
     email: "",
-    image: null,
+    role: "",
+  });
+  const [createFormData, setCreateFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "",
   });
   const navigate = useNavigate();
-  const loggedUser = JSON.parse(localStorage.getItem("user"))
-  const loggedUserId = loggedUser?.id
+  const loggedUser = JSON.parse(localStorage.getItem("user"));
+  const loggedUserId = loggedUser?.id;
 
   useEffect(() => {
     const fetchData = async (page) => {
@@ -55,15 +62,25 @@ function Users() {
     setEditFormData({
       name: user.name || "",
       email: user.email || "",
-      image: user.image || null,
+      role: user.role || "",
     });
     setIsEditModalActive(true);
   };
 
   const closeEditModal = () => {
     setSelectedUser(null);
-    setEditFormData({ name: "", email: "", image: null });
+    setEditFormData({ name: "", email: "", role: "" });
     setIsEditModalActive(false);
+  };
+
+  const openCreateModal = () => {
+    setCreateFormData({ name: "", email: "", password: "", role: "" });
+    setIsCreateModalActive(true);
+  };
+
+  const closeCreateModal = () => {
+    setCreateFormData({ name: "", email: "", password: "", role: "" });
+    setIsCreateModalActive(false);
   };
 
   const openDeleteModal = (user) => {
@@ -81,13 +98,19 @@ function Users() {
     setEditFormData({ ...editFormData, [name]: value });
   };
 
+  const handleCreateChange = (e) => {
+    const { name, value } = e.target;
+    setCreateFormData({ ...createFormData, [name]: value });
+  };
+
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const response = await fetch(
         `http://localhost:3333/users/${selectedUser.id}`,
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -99,7 +122,9 @@ function Users() {
         throw new Error("Erro ao editar o usuário");
       }
       const updatedUser = await response.json();
-      setData(data.map((user) => (user.id === updatedUser.id ? updatedUser : user)));
+      setData(
+        data.map((user) => (user.id === updatedUser.id ? updatedUser : user))
+      );
       closeEditModal();
     } catch (error) {
       console.error("Failed to edit user", error);
@@ -107,14 +132,42 @@ function Users() {
     }
   };
 
-  const deleteUser = async () => {
+  const handleCreateSubmit = async (e) => {
+    e.preventDefault();
+
     try {
-      const response = await fetch(`http://localhost:3333/users/${selectedUser.id}`, {
-        method: "DELETE",
+      const response = await fetch(`http://localhost:3333/users`, {
+        method: "POST",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
+        body: JSON.stringify(createFormData),
       });
+      if (!response.ok) {
+        throw new Error("Erro ao criar o usuário");
+      }
+      const newUser = await response.json();
+      setData([...data, newUser]);
+      closeCreateModal();
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to create user", error);
+      setErrorMessage("Erro ao criar o usuário. Por favor, tente novamente.");
+    }
+  };
+
+  const deleteUser = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3333/users/${selectedUser.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error("Erro ao deletar o usuário");
       }
@@ -122,7 +175,7 @@ function Users() {
       if (selectedUser.id === loggedUserId) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        navigate("/")
+        navigate("/");
       }
       closeDeleteModal();
     } catch (error) {
@@ -140,7 +193,10 @@ function Users() {
             <p>Usuários</p>
           </div>
           <div className="column is-half is-align-content-center has-text-right">
-            <button className="button is-align-content-end">
+            <button
+              className="button is-align-content-end"
+              onClick={openCreateModal}
+            >
               Adicionar usuário
             </button>
           </div>
@@ -155,7 +211,10 @@ function Users() {
                 <div className="card-image">
                   <figure className="image">
                     {user.image ? (
-                      <img src={user.image} alt={user.name} />
+                      <img
+                        src={`http://localhost:3333/images/${user.image}`}
+                        alt={user.name}
+                      />
                     ) : (
                       <FontAwesomeIcon icon={faUser} size="5x" />
                     )}
@@ -164,6 +223,7 @@ function Users() {
                 <div className="card-content is-flex-grow-1">
                   <p className="title">{user.name}</p>
                   <p className="subtitle">{user.email}</p>
+                  <p className="subtitle">Tipo: {user.role}</p>
                 </div>
                 <div className="buttons">
                   <button
@@ -238,15 +298,18 @@ function Users() {
                   </div>
                 </div>
                 <div className="field">
-                  <label className="label">Imagem</label>
+                  <label className="label">Tipo de usuário</label>
                   <div className="control">
-                    <input
-                      className="input"
-                      type="text"
-                      name="image"
-                      value={editFormData.image || ""}
-                      onChange={handleEditChange}
-                    />
+                    <div className="select is-fullwidth">
+                      <select
+                        name="role"
+                        value={editFormData.role}
+                        onChange={handleEditChange}
+                      >
+                        <option value="EMPLOYER">Funcionário</option>
+                        <option value="ADMIN">Administrador</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
                 <div className="buttons">
@@ -257,6 +320,9 @@ function Users() {
                     Cancelar
                   </button>
                 </div>
+                {errorMessage && (
+                  <div className="notification is-danger">{errorMessage}</div>
+                )}
               </form>
             </div>
           </div>
@@ -264,6 +330,83 @@ function Users() {
             className="modal-close is-large"
             aria-label="close"
             onClick={closeEditModal}
+          ></button>
+        </div>
+      )}
+
+      {isCreateModalActive && (
+        <div className={`modal ${isCreateModalActive ? "is-active" : ""}`}>
+          <div className="modal-background" onClick={closeCreateModal}></div>
+          <div className="modal-content">
+            <div className="box">
+              <h1 className="title">Adicionar Usuário</h1>
+              <form onSubmit={handleCreateSubmit}>
+                <div className="field">
+                  <label className="label">Nome</label>
+                  <div className="control">
+                    <input
+                      className="input"
+                      type="text"
+                      name="name"
+                      value={createFormData.name}
+                      onChange={handleCreateChange}
+                    />
+                  </div>
+                </div>
+                <div className="field">
+                  <label className="label">Email</label>
+                  <div className="control">
+                    <input
+                      className="input"
+                      type="email"
+                      name="email"
+                      value={createFormData.email}
+                      onChange={handleCreateChange}
+                    />
+                  </div>
+                </div>
+                <div className="field">
+                  <label className="label">Senha</label>
+                  <div className="control">
+                    <input
+                      className="input"
+                      type="password"
+                      name="password"
+                      value={createFormData.password}
+                      onChange={handleCreateChange}
+                    />
+                  </div>
+                </div>
+                <div className="field">
+                  <label className="label">Tipo de usuário</label>
+                  <div className="control">
+                    <div className="select is-fullwidth">
+                      <select
+                        name="role"
+                        value={createFormData.role}
+                        onChange={handleCreateChange}
+                      >
+                        <option value="EMPLOYER">Funcionário</option>
+                        <option value="ADMIN">Administrador</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div className="buttons">
+                  <button className="button is-primary" type="submit">
+                    Salvar
+                  </button>
+                  <button className="button" onClick={closeCreateModal}>
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <button
+            className="modal-close is-large"
+            aria-label="close"
+            onClick={closeCreateModal}
           ></button>
         </div>
       )}
