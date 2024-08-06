@@ -18,4 +18,4 @@ As principais tecnologias utilizadas neste projeto são:
 - [JSON Server](https://www.npmjs.com/package/json-server): Um servidor de API REST fake para desenvolvimento e prototipagem.
 
 ## Repositório com a API usada
-- [Fake API](https://linkrepositório.com): Fake API utilizando JSON Server, JSON Server Auth, Multer
+- [Fake API](https://github.com/thiagojorgelins/backend-JSON-Server-atv8.git): Fake API utilizando JSON Server, JSON Server Auth, Multer
